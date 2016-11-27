@@ -1,0 +1,44 @@
+{
+  "name": "react-native-web-components",
+  "version": "0.0.1",
+  "description": "Use html react components in react-native apps",
+  "author": "Tom Clarkson <tom@orangeguava.com> (http://tqclarkson.com)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tqc/react-native-web-components"
+  },
+  "bugs": {
+    "url": "https://github.com/tqc/react-native-web-components/issues"
+  },
+  "scripts": {
+    "test": "eslint . && mocha --compilers js:babel-core/register"
+  },
+  "main": "index.js",
+  "dependencies": {},
+  "peerDependencies": {
+    "react": "15.4.1",
+    "react-native": "0.38.0",
+    "react-redux": "^4.4.6"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.7.5",
+    "babel-core": "^6.7.6",
+    "babel-eslint": "^6.0.2",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.7.4",
+    "chai": "^3.5.0",
+    "eslint": "^2.13.0",
+    "eslint-config-tqc": "^1.0.6",
+    "eslint-plugin-react": "^6.7.1",
+    "lodash": "^4.16.6",
+    "mocha": "^2.4.5"
+  },
+  "engines": {
+    "node": "^6"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/tqc/react-native-web-components/raw/master/license.txt"
+    }
+  ]
+}

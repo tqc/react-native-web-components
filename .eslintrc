@@ -1,0 +1,11 @@
+{
+    "extends": ["tqc/react"],
+    "rules": {
+        "no-unused-vars": "warn",
+        "no-alert": "warn",
+        "react/prop-types": "warn"
+    },
+    "globals": {
+        "io": true
+    }
+}
