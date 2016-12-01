@@ -3,7 +3,9 @@ import {Component, createElement} from "react";
 import { connect as rrc } from 'react-redux';
 
 export function connect(mapStateToProps, mapDispatchToProps, c) {
+    console.log("Connect....");
     if (global.__fbBatchedBridgeConfig) {
+        console.log("detected native component");
         // native host - render a web view and connect it with redux
         // just return settings
         // call with <WebWrapper component={TestComponent} />
@@ -16,7 +18,7 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
             };
         };
     } else if (global.isWrappedComponent) {
-
+        console.log("detected wrapped component");
         // inside the wrapped webview - return the unconnected component and wait for a message
         // implementation will be similar to react-redux - update props on message
         //alert(global.initialState);
@@ -25,7 +27,8 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
         let mappedFunctions = {};
 
         if (mapDispatchToProps) {
-            mappedFunctions = mapDispatchToProps((action) => window.postMessage(JSON.stringify(action)));
+            // this may run before react native injects window.postMessage
+            mappedFunctions = mapDispatchToProps((action) => window.location = 'react-js-navigation://postMessage?' + encodeURIComponent(JSON.stringify(action)));
         }
 
         return function(InnerComponent) {
@@ -38,7 +41,7 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
                     document.addEventListener("message", function(e) {
                         console.log("message received");
                         console.log(e);
-                        component.receivedState.message = JSON.stringify(e.data);
+                        component.receivedState.message = e.data;
                         component.receivedState = Object.assign(component.receivedState, JSON.parse(e.data));
                         component.setState({
                             message3: JSON.stringify(e.data)
@@ -48,7 +51,6 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
                 }
                 render() {
                     var initialProps = window.initialState;
-
                     return createElement(InnerComponent, {
                         ...this.receivedState,
                         ...mappedFunctions,
@@ -61,6 +63,7 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
             return ConnectedComponent;
         };
     } else {
+        console.log("detected standard web component");
         // web component in normal use - call react redux
         return rrc(mapStateToProps, mapDispatchToProps, c);
     }

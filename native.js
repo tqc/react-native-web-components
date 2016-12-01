@@ -7,6 +7,7 @@ import { connect } from "react-redux";
 class MappedComponent extends Component {
     constructor(props, context) {
         super(props, context);
+        this.sentState = {};
         this.store = props.store || context.store;
             // call store.getState so we can call mapStateToProps on it
     }
@@ -27,11 +28,12 @@ class MappedComponent extends Component {
         var payload = {};
         for (let i = 0; i < nextProps.propKeys.length; i++) {
             let k = nextProps.propKeys[i];
-            payload[k] = nextProps[k];
+            // todo: no need to send unchanged values
+            if (this.sentState[k] == nextProps[k]) continue;
+            payload[k] = this.sentState[k] = nextProps[k];
         }
 
         console.log("Update of webview");
-        // todo: trim any unchanged values from the payload
         this.webview.postMessage(JSON.stringify(payload));
 
         return false;
@@ -44,7 +46,7 @@ class MappedComponent extends Component {
         var payload = {};
         for (let i = 0; i < this.props.propKeys.length; i++) {
             let k = this.props.propKeys[i];
-            payload[k] = this.props[k];
+            payload[k] = this.sentState[k] = this.props[k];
         }
 
         var initialState = JSON.stringify(payload);
@@ -83,7 +85,8 @@ class WebWrapper extends Component {
             // call store.getState so we can call mapStateToProps on it
     }
     render() {
-
+        console.log("Rendering WebWrapper");
+        console.log(this.props.component);
         if (!this.mappedProps) {
             var state = this.store.getState();
             this.mappedProps = this.props.component.mapStateToProps(state, {});
