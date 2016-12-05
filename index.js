@@ -2,6 +2,31 @@ import {Component, createElement} from "react";
 
 import { connect as rrc } from 'react-redux';
 
+
+var messageQueue = [];
+
+var lastMessageSent = 0;
+var lastMessageCompleted = 0;
+
+var messagePending = false;
+function processQueue() {
+    if (!messageQueue.length || messagePending) return;
+    messagePending = true;
+    window.location = 'react-js-navigation://postMessage?' + encodeURIComponent(messageQueue.shift());
+}
+
+function postMessage(message) {
+    messageQueue.push(JSON.stringify(message));
+    processQueue();
+}
+
+document.addEventListener("messagereceived", function(e) {
+    lastMessageCompleted++;
+    processQueue();
+});
+
+
+
 export function connect(mapStateToProps, mapDispatchToProps, c) {
     console.log("Connect....");
     if (global.__fbBatchedBridgeConfig) {
@@ -28,7 +53,7 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
 
         if (mapDispatchToProps) {
             // this may run before react native injects window.postMessage
-            mappedFunctions = mapDispatchToProps((action) => window.location = 'react-js-navigation://postMessage?' + encodeURIComponent(JSON.stringify(action)));
+            mappedFunctions = mapDispatchToProps(postMessage);
         }
 
         return function(InnerComponent) {
@@ -41,11 +66,18 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
                     document.addEventListener("message", function(e) {
                         console.log("message received");
                         console.log(e);
-                        component.receivedState.message = e.data;
-                        component.receivedState = Object.assign(component.receivedState, JSON.parse(e.data));
-                        component.setState({
-                            message3: JSON.stringify(e.data)
-                        });
+                        var message = JSON.parse(e.data);
+                        if (message.type == "ACK") {
+                            lastMessageCompleted++;
+                            processQueue();
+                        }
+                        else {
+                            component.receivedState.message = e.data;
+                            component.receivedState = Object.assign(component.receivedState, JSON.parse(e.data));
+                            component.setState({
+                                message3: JSON.stringify(e.data)
+                            });
+                        }
                     });
 
                 }

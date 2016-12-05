@@ -15,6 +15,7 @@ class MappedComponent extends Component {
     }
     processMessage(e) {
         console.log("received message from webview");
+        this.webview.postMessage(JSON.stringify({type: "ACK"}));
         var message = e.nativeEvent.data;
         if (!message) return;
         else if (message.indexOf("{") == 0) {
@@ -45,6 +46,7 @@ class MappedComponent extends Component {
         //alert(this.props.component && this.props.component.url);
         //alert(this.props.testval);
 
+
         var payload = {};
         for (let i = 0; i < this.props.propKeys.length; i++) {
             let k = this.props.propKeys[i];
@@ -54,6 +56,7 @@ class MappedComponent extends Component {
         var initialState = JSON.stringify(payload);
 
         console.log("First load of webview");
+        console.log(this.props);
 
         let componentKey = this.props.componentKey || this.props.name;
         if (!componentKey) {
@@ -113,10 +116,11 @@ class WebWrapper extends Component {
         console.log("Rendering WebWrapper");
         console.log(this.props.component);
         if (!this.mappedProps) {
+            console.log("Updating mapped props");
             var state = this.store.getState();
             this.mappedProps = this.props.component.mapStateToProps(state, {});
         }
-
+        console.log(this.mappedProps);
         this.ConnectedComponent = this.ConnectedComponent || connect(this.props.component.mapStateToProps, this.props.component.mapDispatchToProps)(MappedComponent);
         var ConnectedComponent = this.ConnectedComponent;
 
