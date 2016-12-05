@@ -1,6 +1,6 @@
 {
   "name": "react-native-web-components",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "description": "Use html react components in react-native apps",
   "author": "Tom Clarkson <tom@orangeguava.com> (http://tqclarkson.com)",
   "repository": {
@@ -15,6 +15,7 @@
   },
   "main": "index.js",
   "dependencies": {
+    "fs-extra": "^1.0.0",
     "react": "^15.4.1",
     "react-redux": "^4.4.6",
     "redux": "^3.6.0"

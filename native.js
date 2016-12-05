@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 
-import { WebView } from 'react-native';
+import { View, WebView } from 'react-native';
 
 import { connect } from "react-redux";
+
+var WW;
 
 class MappedComponent extends Component {
     constructor(props, context) {
@@ -53,21 +55,43 @@ class MappedComponent extends Component {
 
         console.log("First load of webview");
 
-        var cssUrl = "http://localhost:8081/component.css";
-        var bundleUrl = "http://localhost:8081/componenttest.bundle?platform=ios&dev=true&minify=false";
+        let componentKey = this.props.componentKey || this.props.name;
+        if (!componentKey) {
+            console.error("componentKey not set");
+            return (
+                <View style={{flex: 1}}>
+                    <Text>componentKey not set</Text>
+                </View>
+            );
+        }
+
+
+        var mainBundleUrl = WW.mainBundleUrl || "http://localhost:8081/index.ios.js.bundle?platform=ios&dev=true&minify=false";
+
+        var isDevUrl = mainBundleUrl.indexOf("http") >= 0;
+
+        var baseUrl = WW.baseUrl || mainBundleUrl.substr(0, isDevUrl ? mainBundleUrl.indexOf("index.") : mainBundleUrl.indexOf("main.jsbundle"));
+
+        console.log(baseUrl);
+
+        var cssUrl = baseUrl + "build/index.css";
+        var bundleUrl = isDevUrl ? mainBundleUrl.replace(/(index.ios)/, "rnwc/" + componentKey) : baseUrl + "rnwc/" + componentKey + ".jsbundle";
 
         var source = {
-            html: "<html><head><link rel='stylesheet' href='" + cssUrl + "'></head><body>Hello world5</body><script>window.process = {env: {}};window.isWrappedComponent = true; window.initialState=" + initialState + ";</script><script src='" + bundleUrl + "'></script></html> "
+            baseUrl,
+            html: "<html><head><link rel='stylesheet' href='" + cssUrl + "'></head><body></body><script>window.process = {env: {}};window.isWrappedComponent = true; window.initialState=" + initialState + ";</script><script src='" + bundleUrl + "'></script></html> "
         };
 
+        var style = {};
+        style.flex = 1;
+        style.backgroundColor = this.props.backgroundColor || "transparent";
 
         return (
 
             <WebView ref = { webview => { this.webview = webview; } }
             source = { source }
             onMessage = {(e) => this.processMessage(e)}
-            style = {
-                { flex: 1, backgroundColor: "white" } }
+            style = {style}
             />
 
         );
@@ -85,6 +109,7 @@ class WebWrapper extends Component {
             // call store.getState so we can call mapStateToProps on it
     }
     render() {
+        console.log(this.props.style);
         console.log("Rendering WebWrapper");
         console.log(this.props.component);
         if (!this.mappedProps) {
@@ -95,12 +120,12 @@ class WebWrapper extends Component {
         this.ConnectedComponent = this.ConnectedComponent || connect(this.props.component.mapStateToProps, this.props.component.mapDispatchToProps)(MappedComponent);
         var ConnectedComponent = this.ConnectedComponent;
 
-        return (<ConnectedComponent propKeys = { Object.keys(this.mappedProps) }
+        return (<ConnectedComponent {...this.props} propKeys = { Object.keys(this.mappedProps) }
             />
         );
     }
 }
-
+WW = WebWrapper;
 WebWrapper.contextTypes = {
     store: React.PropTypes.any
 };
