@@ -5,9 +5,6 @@ import { connect as rrc } from 'react-redux';
 
 var messageQueue = [];
 
-var lastMessageSent = 0;
-var lastMessageCompleted = 0;
-
 var messagePending = false;
 function processQueue() {
     if (!messageQueue.length || messagePending) return;
@@ -20,10 +17,6 @@ function postMessage(message) {
     processQueue();
 }
 
-document.addEventListener("messagereceived", function(e) {
-    lastMessageCompleted++;
-    processQueue();
-});
 
 
 
@@ -68,7 +61,7 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
                         console.log(e);
                         var message = JSON.parse(e.data);
                         if (message.type == "ACK") {
-                            lastMessageCompleted++;
+                            messagePending = false;
                             processQueue();
                         }
                         else {
