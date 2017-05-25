@@ -11,9 +11,10 @@ exports.generateComponentScripts = function generateComponentScripts(webComponen
     for (let i = 0; i < webComponents.length; i++) {
         let def = webComponents[i];
         let outFile = "./rnwc/" + def.key + ".js";
+        let impname = def.namedExport ? `{${def.namedExport} as ${def.key}}` : def.key;
         let src = `import {createElement} from "react";\n`
             + `import {render} from "react-dom";\n`
-            + `import ${def.key} from "${def.path}";\n`
+            + `import ${impname} from "${def.path}";\n`
             + `render(createElement(${def.key}), document.body);\n`;
         fs.writeFileSync(outFile, src, "utf-8");
 
@@ -21,8 +22,6 @@ exports.generateComponentScripts = function generateComponentScripts(webComponen
             + ` --entry-file "rnwc/${def.key}.js" `
             + ` --platform ios `
             + ` --dev $DEV `
-            // todo: can we assume the main bundle call cleared the cache?
-            + ` --reset-cache `
             + ` --bundle-output "$DEST/rnwc/${def.key}.jsbundle" `
             + ` --assets-dest "$DEST";`;
         bundlerScript += "\n" + bundlerCmd + "\n";

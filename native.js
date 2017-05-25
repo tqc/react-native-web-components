@@ -31,12 +31,15 @@ class MappedComponent extends Component {
         var payload = {};
         for (let i = 0; i < nextProps.propKeys.length; i++) {
             let k = nextProps.propKeys[i];
-            // todo: no need to send unchanged values
+            // no need to send unchanged values
             if (this.sentState[k] == nextProps[k]) continue;
             payload[k] = this.sentState[k] = nextProps[k];
+            // if a property changes to undefined, replace it with null since
+            // undefined is used to mean not updated
+            if (payload[k] === undefined) payload[k] = null;
         }
 
-        console.log("Update of webview");
+        console.log("Update of webview " + nextProps.componentKey);
         this.webview.postMessage(JSON.stringify(payload));
 
         return false;
@@ -105,6 +108,8 @@ MappedComponent.contextTypes = {
     store: React.PropTypes.any
 };
 
+
+
 class WebWrapper extends Component {
     constructor(props, context) {
         super(props, context);
@@ -112,19 +117,23 @@ class WebWrapper extends Component {
             // call store.getState so we can call mapStateToProps on it
     }
     render() {
-        console.log(this.props.style);
         console.log("Rendering WebWrapper");
-        console.log(this.props.component);
-        if (!this.mappedProps) {
-            console.log("Updating mapped props");
-            var state = this.store.getState();
-            this.mappedProps = this.props.component.mapStateToProps(state, {});
-        }
-        console.log(this.mappedProps);
-        this.ConnectedComponent = this.ConnectedComponent || connect(this.props.component.mapStateToProps, this.props.component.mapDispatchToProps)(MappedComponent);
+
+        let mstp = (s, p) => {
+            let result = {};
+            if (this.props.component.mapStateToProps) {
+                result = this.props.component.mapStateToProps(s, p);
+            }
+            result.propKeys = Object.keys(result);
+            return result;
+        };
+        let customProps = {...this.props};
+        delete customProps.component;
+
+        this.ConnectedComponent = this.ConnectedComponent || connect(mstp, this.props.component.mapDispatchToProps)(MappedComponent);
         var ConnectedComponent = this.ConnectedComponent;
 
-        return (<ConnectedComponent {...this.props} propKeys = { Object.keys(this.mappedProps) }
+        return (<ConnectedComponent {...customProps}
             />
         );
     }

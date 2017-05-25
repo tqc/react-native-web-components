@@ -1,6 +1,6 @@
 {
   "name": "react-native-web-components",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Use html react components in react-native apps",
   "author": "Tom Clarkson <tom@orangeguava.com> (http://tqclarkson.com)",
   "repository": {
@@ -29,6 +29,8 @@
     "babel-cli": "^6.7.5",
     "babel-core": "^6.7.6",
     "babel-eslint": "^6.0.2",
+    "babel-plugin-transform-class-properties": "^6.19.0",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.7.4",
     "babel-preset-es2015": "^6.18.0",
     "babel-preset-react": "^6.16.0",
