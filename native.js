@@ -70,10 +70,8 @@ class MappedComponent extends Component {
             console.log("Update of webview " + nextProps.componentKey);
             this.webview.postMessage(JSON.stringify(payload));
         }
-        return true;
         if (nextState.contentHeight != this.state.contentHeight) return true;
         return false;
-
     }
     getWebViewSettings() {
         if (this.webViewSettings) return this.webViewSettings;
