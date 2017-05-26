@@ -18,8 +18,6 @@ function postMessage(message) {
 }
 
 
-
-
 export function connect(mapStateToProps, mapDispatchToProps, c) {
     console.log("Connect....");
     if (global.__fbBatchedBridgeConfig) {
@@ -49,6 +47,7 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
             mappedFunctions = mapDispatchToProps(postMessage);
         }
 
+
         return function(InnerComponent) {
 
             class ConnectedComponent extends Component {
@@ -67,12 +66,33 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
                         else {
                             component.receivedState.message = e.data;
                             component.receivedState = Object.assign(component.receivedState, JSON.parse(e.data));
+
+                            if (component.receivedState.functionKeys) {
+                                for (let k of component.receivedState.functionKeys) {
+                                    mappedFunctions[k] = (a, b, c, d, e, f, g) => postMessage({type: "RNWC_PROPERTY_FUNCTION", func: k, params: [a, b, c, d, e, f, g]});
+                                }
+                            }
+
                             component.setState({
                                 message3: JSON.stringify(e.data)
                             });
                         }
                     });
 
+                }
+                componentDidMount() {
+                    let height = document.body.scrollHeight;
+                    if (height != this.reportedHeight) {
+                        this.reportedHeight = height;
+                        postMessage({type: "RNWC_CONTENT_SIZE", height: height});
+                    }
+                }
+                componentDidUpdate() {
+                    let height = document.body.scrollHeight;
+                    if (height != this.reportedHeight) {
+                        this.reportedHeight = height;
+                        postMessage({type: "RNWC_CONTENT_SIZE", height: height});
+                    }
                 }
                 render() {
                     var initialProps = window.initialState;
@@ -84,7 +104,7 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
                     });
                 }
             }
-
+            ConnectedComponent.isConnectedComponent = true;
             return ConnectedComponent;
         };
     } else {
@@ -93,3 +113,22 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
         return rrc(mapStateToProps, mapDispatchToProps, c);
     }
 }
+
+
+export function embedComponent(originalComponent) {
+    if (!originalComponent) {
+        return () => "Component " + window.componentKey + " not found";
+    }
+
+    if (originalComponent.isConnectedComponent) {
+        // component already set up for redux
+        return originalComponent;
+    }
+    else {
+        return connect(
+            originalComponent.mapStateToProps || (() => ({})),
+            originalComponent.mapDispatchToProps || (() => ({})),
+        )(originalComponent);
+    }
+}
+

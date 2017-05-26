@@ -10,75 +10,87 @@ class MappedComponent extends Component {
     constructor(props, context) {
         super(props, context);
         this.sentState = {};
-        this.store = props.store || context.store;
-            // call store.getState so we can call mapStateToProps on it
+        this.state = {
+            contentHeight: 0
+        };
     }
     processMessage(e) {
+        let store = this.props.store || this.context.store;
         console.log("received message from webview");
         this.webview.postMessage(JSON.stringify({type: "ACK"}));
         var message = e.nativeEvent.data;
         if (!message) return;
         else if (message.indexOf("{") == 0) {
-            // action
-            this.store.dispatch(JSON.parse(message));
+            let action = JSON.parse(message);
+            if (action.type == "RNWC_PROPERTY_FUNCTION") {
+                this.props[action.func].apply(null, action.params);
+            }
+            else if (action.type == "RNWC_CONTENT_SIZE") {
+                this.setState({
+                    contentHeight: action.height
+                });
+            }
+           else {
+                // action
+                store.dispatch(action);
+            }
         }
         else {
             console.log(message);
         }
     }
-    shouldComponentUpdate(nextProps, nextState) {
-
+    getPayload(oldProps, nextProps) {
         var payload = {};
-        for (let i = 0; i < nextProps.propKeys.length; i++) {
-            let k = nextProps.propKeys[i];
-            // no need to send unchanged values
+
+        var functionKeys = [];
+        for (let k in nextProps) {
+            if (k == "component") continue;
+            if (this.props[k] == nextProps[k]) continue;
+            if (typeof nextProps[k] == "function") {
+                functionKeys.push(k);
+                continue;
+            }
             if (this.sentState[k] == nextProps[k]) continue;
             payload[k] = this.sentState[k] = nextProps[k];
+
             // if a property changes to undefined, replace it with null since
             // undefined is used to mean not updated
             if (payload[k] === undefined) payload[k] = null;
         }
 
-        console.log("Update of webview " + nextProps.componentKey);
-        this.webview.postMessage(JSON.stringify(payload));
+        if (!this.sentState.functionKeys || functionKeys.length > 0) {
+            payload.functionKeys = this.sentState.functionKeys = functionKeys;
+        }
 
+        return payload;
+    }
+    shouldComponentUpdate(nextProps, nextState) {
+        let payload = this.getPayload(this.props, nextProps);
+        if (Object.keys(payload).length > 0) {
+            console.log("Update of webview " + nextProps.componentKey);
+            this.webview.postMessage(JSON.stringify(payload));
+        }
+        return true;
+        if (nextState.contentHeight != this.state.contentHeight) return true;
         return false;
 
     }
-    render() {
-        //alert(this.props.component && this.props.component.url);
-        //alert(this.props.testval);
+    getWebViewSettings() {
+        if (this.webViewSettings) return this.webViewSettings;
 
 
-        var payload = {};
-        for (let i = 0; i < this.props.propKeys.length; i++) {
-            let k = this.props.propKeys[i];
-            payload[k] = this.sentState[k] = this.props[k];
-        }
+        var payload = this.getPayload({}, this.props);
 
         var initialState = JSON.stringify(payload);
 
-        console.log("First load of webview");
-        console.log(this.props);
 
         let componentKey = this.props.componentKey || this.props.name;
-        if (!componentKey) {
-            console.error("componentKey not set");
-            return (
-                <View style={{flex: 1}}>
-                    <Text>componentKey not set</Text>
-                </View>
-            );
-        }
-
 
         var mainBundleUrl = WW.mainBundleUrl || "http://localhost:8081/index.ios.js.bundle?platform=ios&dev=true&minify=false";
 
         var isDevUrl = mainBundleUrl.indexOf("http") >= 0;
 
         var baseUrl = WW.baseUrl || mainBundleUrl.substr(0, isDevUrl ? mainBundleUrl.indexOf("index.") : mainBundleUrl.indexOf("main.jsbundle"));
-
-        console.log(baseUrl);
 
         var cssUrl = baseUrl + "build/index.css";
         var entryPointName = this.props.useCombinedScript ? "allcomponents" : componentKey;
@@ -102,15 +114,41 @@ class MappedComponent extends Component {
                 </html>"
         };
 
+        this.webViewSettings = {
+            source,
+            onMessage: (e) => this.processMessage(e)
+        };
+
+
+        return this.webViewSettings;
+
+    }
+    render() {
+        let webViewSettings = this.getWebViewSettings();
+
+        let componentKey = this.props.componentKey || this.props.name;
+        if (!componentKey) {
+            console.error("componentKey not set");
+            return (
+                <View style={{flex: 1}}>
+                    <Text>Component key not set</Text>
+                </View>
+            );
+        }
+
         var style = {};
-        style.flex = 1;
         style.backgroundColor = this.props.backgroundColor || "transparent";
+        if (this.props.resizeToContent == true) {
+            style.height = this.state.contentHeight;
+        }
+        else {
+            style.flex = 1;
+        }
 
         return (
-
             <WebView ref = { webview => { this.webview = webview; } }
-            source = { source }
-            onMessage = {(e) => this.processMessage(e)}
+            source = { webViewSettings.source }
+            onMessage = {webViewSettings.onMessage}
             style = {style}
             />
 
@@ -133,23 +171,17 @@ class WebWrapper extends Component {
     render() {
         console.log("Rendering WebWrapper");
 
-        let mstp = (s, p) => {
-            let result = {};
-            if (this.props.component.mapStateToProps) {
-                result = this.props.component.mapStateToProps(s, p);
-            }
-            result.propKeys = Object.keys(result);
-            return result;
-        };
         let customProps = {...this.props};
         delete customProps.component;
 
-        this.ConnectedComponent = this.ConnectedComponent || connect(mstp, this.props.component.mapDispatchToProps)(MappedComponent);
-        var ConnectedComponent = this.ConnectedComponent;
+        let shouldConnect = this.props.component.mapStateToProps || this.props.component.mapDispatchToProps;
+        if (shouldConnect) {
+            var ConnectedComponent = this.ConnectedComponent = this.ConnectedComponent || connect(this.props.component.mapStateToProps, this.props.component.mapDispatchToProps)(MappedComponent);
+            return (<ConnectedComponent {...customProps}/>);
+        } else {
+            return (<MappedComponent {...customProps}/>);
+        }
 
-        return (<ConnectedComponent {...customProps}
-            />
-        );
     }
 }
 WW = WebWrapper;
