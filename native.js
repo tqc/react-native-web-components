@@ -81,11 +81,25 @@ class MappedComponent extends Component {
         console.log(baseUrl);
 
         var cssUrl = baseUrl + "build/index.css";
-        var bundleUrl = isDevUrl ? mainBundleUrl.replace(/(index.ios)/, "rnwc/" + componentKey) : baseUrl + "rnwc/" + componentKey + ".jsbundle";
+        var entryPointName = this.props.useCombinedScript ? "allcomponents" : componentKey;
+        var bundleUrl = isDevUrl ? mainBundleUrl.replace(/(index.ios)/, "rnwc/" + entryPointName) : baseUrl + "rnwc/" + entryPointName + ".jsbundle";
 
         var source = {
             baseUrl,
-            html: "<html><head><link rel='stylesheet' href='" + cssUrl + "'></head><body></body><script>window.process = {env: {}};window.isWrappedComponent = true; window.initialState=" + initialState + ";</script><script src='" + bundleUrl + "'></script></html> "
+            html: "\
+                <html>\
+                    <head>\
+                        <link rel='stylesheet' href='" + cssUrl + "'>\
+                    </head>\
+                    <body></body>\
+                    <script>\
+                        window.process = {env: {}};\
+                        window.isWrappedComponent = true;\
+                        window.initialState=" + initialState + ";\
+                        window.componentKey='" + componentKey + "';\
+                        </script>\
+                        <script src='" + bundleUrl + "'></script>\
+                </html>"
         };
 
         var style = {};
