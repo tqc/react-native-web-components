@@ -9,7 +9,9 @@ var WW;
 class MappedComponent extends Component {
     constructor(props, context) {
         super(props, context);
-        this.sentState = {};
+        this.sentState = {
+            functionKeys: []
+        };
         this.state = {
             contentHeight: 0
         };
@@ -42,12 +44,13 @@ class MappedComponent extends Component {
     getPayload(oldProps, nextProps) {
         var payload = {};
 
-        var functionKeys = [];
+        var newFunctionKeys = [];
         for (let k in nextProps) {
             if (k == "component") continue;
-            if (this.props[k] == nextProps[k]) continue;
             if (typeof nextProps[k] == "function") {
-                functionKeys.push(k);
+                if (this.sentState.functionKeys.indexOf(k) < 0) {
+                    newFunctionKeys.push(k);
+                }
                 continue;
             }
             if (this.sentState[k] == nextProps[k]) continue;
@@ -58,8 +61,8 @@ class MappedComponent extends Component {
             if (payload[k] === undefined) payload[k] = null;
         }
 
-        if (!this.sentState.functionKeys || functionKeys.length > 0) {
-            payload.functionKeys = this.sentState.functionKeys = functionKeys;
+        if (newFunctionKeys.length > 0) {
+            payload.functionKeys = this.sentState.functionKeys = this.sentState.functionKeys.concat(newFunctionKeys);
         }
 
         return payload;
@@ -100,14 +103,14 @@ class MappedComponent extends Component {
                 <html>\
                     <head>\
                         <link rel='stylesheet' href='" + cssUrl + "'>\
+                        <script>\
+                            window.process = {env: {}};\
+                            window.isWrappedComponent = true;\
+                            window.initialState=" + initialState + ";\
+                            window.componentKey='" + componentKey + "';\
+                        </script>\
                     </head>\
                     <body></body>\
-                    <script>\
-                        window.process = {env: {}};\
-                        window.isWrappedComponent = true;\
-                        window.initialState=" + initialState + ";\
-                        window.componentKey='" + componentKey + "';\
-                        </script>\
                         <script src='" + bundleUrl + "'></script>\
                 </html>"
         };
