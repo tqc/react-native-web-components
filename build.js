@@ -5,6 +5,7 @@ var path = require("path");
 exports.generateCombinedComponentScripts = function generateCombinedComponentScripts(webComponents) {
     fs.ensureDirSync("./rnwc");
     let combinedScript = `import {createElement} from "react";\n`
+            + `import {embedComponent} from "react-native-web-components";\n`
             + `import {render} from "react-dom";\n`
             + `var webComponents = {};\n`;
     var bundlerScript = fs.readFileSync("./node_modules/react-native/packager/react-native-xcode.sh", "utf-8")
@@ -29,7 +30,7 @@ exports.generateCombinedComponentScripts = function generateCombinedComponentScr
 
 
     combinedScript += `\n\
-        render(createElement(webComponents[window.componentKey]), document.body);\n`;
+        render(createElement(embedComponent(webComponents[window.componentKey])), document.body);\n`;
 
     fs.writeFileSync("./rnwc/allcomponents.js", combinedScript, "utf-8");
     fs.writeFileSync("./react-native-xcode.sh", bundlerScript, {encoding: "utf-8", mode: 0o755});
@@ -48,9 +49,10 @@ exports.generateComponentScripts = function generateComponentScripts(webComponen
         let outFile = "./rnwc/" + def.key + ".js";
         let impname = def.namedExport ? `{${def.namedExport} as ${def.key}}` : def.key;
         let src = `import {createElement} from "react";\n`
+            + `import {embedComponent} from "react-native-web-components";\n`
             + `import {render} from "react-dom";\n`
             + `import ${impname} from "${def.path}";\n`
-            + `render(createElement(${def.key}), document.body);\n`;
+            + `render(createElement(embedComponent(${def.key})), document.body);\n`;
         fs.writeFileSync(outFile, src, "utf-8");
 
         let bundlerCmd = `$NODE_BINARY "$REACT_NATIVE_DIR/local-cli/cli.js" bundle`

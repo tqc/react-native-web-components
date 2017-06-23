@@ -55,6 +55,14 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
                     super();
                     this.receivedState = window.initialState;
                     let component = this;
+
+                    if (component.receivedState.functionKeys) {
+                        for (let k of component.receivedState.functionKeys) {
+                            mappedFunctions[k] = (a, b, c, d, e, f, g) => postMessage({type: "RNWC_PROPERTY_FUNCTION", func: k, params: [a, b, c, d, e, f, g]});
+                        }
+                    }
+
+
                     document.addEventListener("message", function(e) {
                         console.log("message received");
                         console.log(e);

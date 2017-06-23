@@ -32,7 +32,7 @@ class MappedComponent extends Component {
                     contentHeight: action.height
                 });
             }
-           else {
+            else {
                 // action
                 store.dispatch(action);
             }
@@ -82,20 +82,25 @@ class MappedComponent extends Component {
 
         var payload = this.getPayload({}, this.props);
 
-        var initialState = JSON.stringify(payload);
+        var initialState = JSON.stringify(payload).replace(/<\/(script)/gi, "<\\/$1");
+
 
 
         let componentKey = this.props.componentKey || this.props.name;
 
-        var mainBundleUrl = WW.mainBundleUrl || "http://localhost:8081/index.ios.js.bundle?platform=ios&dev=true&minify=false";
+        var mainBundleUrl = WW.mainBundleUrl || "http://localhost:8081/index.ios.bundle?platform=ios&dev=true&minify=false";
 
-        var isDevUrl = mainBundleUrl.indexOf("http") >= 0;
+        let m = (/(.*\/)([^/]*)(\.(js)?bundle.*)/g).exec(mainBundleUrl);
 
-        var baseUrl = WW.baseUrl || mainBundleUrl.substr(0, isDevUrl ? mainBundleUrl.indexOf("index.") : mainBundleUrl.indexOf("main.jsbundle"));
+        var isDevUrl = mainBundleUrl.indexOf("http") == 0;
 
-        var cssUrl = baseUrl + "build/index.css";
+
+
+        var baseUrl = WW.baseUrl || m[1];
+        var cssUrl = WW.cssUrl || baseUrl + "build/index.css";
+
         var entryPointName = this.props.useCombinedScript ? "allcomponents" : componentKey;
-        var bundleUrl = isDevUrl ? mainBundleUrl.replace(/(index.ios)/, "rnwc/" + entryPointName) : baseUrl + "rnwc/" + entryPointName + ".jsbundle";
+        var bundleUrl = m[1] + "rnwc/" + entryPointName + m[3];
 
         var source = {
             baseUrl,
