@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from "prop-types";
 
 import { View, WebView } from 'react-native';
 
@@ -6,7 +7,24 @@ import { connect } from "react-redux";
 
 var WW;
 
-class MappedComponent extends Component {
+export class MappedComponent extends Component {
+    static contextTypes = {
+        store: PropTypes.any
+    };
+    static propTypes = {
+        store: PropTypes.any,
+        componentKey: PropTypes.string,
+        // fallback if componentKey is not specified
+        name: PropTypes.string,
+        // if true, web view loads rnwc/allcomponents.js
+        // if false, web view loads rnwc/[componentKey].js
+        useCombinedScript: PropTypes.bool,
+        // color that will appear on overscroll
+        backgroundColor: PropTypes.string,
+        // if true, the webview will be the height of the html content
+        // if false, it will use flex:1 to fill the containing view, possibly with scrolling
+        resizeToContent: PropTypes.bool
+    }
     constructor(props, context) {
         super(props, context);
         this.sentState = {
@@ -92,10 +110,6 @@ class MappedComponent extends Component {
 
         let m = (/(.*\/)([^/]*)(\.(js)?bundle.*)/g).exec(mainBundleUrl);
 
-        var isDevUrl = mainBundleUrl.indexOf("http") == 0;
-
-
-
         var baseUrl = WW.baseUrl || m[1];
         var cssUrl = WW.cssUrl || baseUrl + "build/index.css";
 
@@ -129,6 +143,9 @@ class MappedComponent extends Component {
         return this.webViewSettings;
 
     }
+    renderHeader() {
+        return null;
+    }
     render() {
         let webViewSettings = this.getWebViewSettings();
 
@@ -152,23 +169,27 @@ class MappedComponent extends Component {
         }
 
         return (
+            <View style = {style}>
+            {this.renderHeader()}
             <WebView ref = { webview => { this.webview = webview; } }
             source = { webViewSettings.source }
             onMessage = {webViewSettings.onMessage}
             style = {style}
             />
-
+            </View>
         );
     }
 }
 
-MappedComponent.contextTypes = {
-    store: React.PropTypes.any
-};
-
-
 
 class WebWrapper extends Component {
+    static contextTypes = {
+        store: PropTypes.any
+    };
+    static propTypes = {
+        store: PropTypes.any,
+        component: PropTypes.any
+    }
     constructor(props, context) {
         super(props, context);
         this.store = props.store || context.store;
@@ -191,8 +212,5 @@ class WebWrapper extends Component {
     }
 }
 WW = WebWrapper;
-WebWrapper.contextTypes = {
-    store: React.PropTypes.any
-};
 
 export { WebWrapper };

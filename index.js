@@ -17,10 +17,10 @@ function postMessage(message) {
     processQueue();
 }
 
-
-export function connect(mapStateToProps, mapDispatchToProps, c) {
+export function connect(mapStateToProps, mapDispatchToProps, mergeProps, options) {
     console.log("Connect....");
-    if (global.__fbBatchedBridgeConfig) {
+    let isNativeApp = (typeof navigator !== 'undefined' && navigator.product === 'ReactNative');
+    if (isNativeApp) {
         console.log("detected native component");
         // native host - render a web view and connect it with redux
         // just return settings
@@ -53,36 +53,34 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
             class ConnectedComponent extends Component {
                 constructor() {
                     super();
-                    this.receivedState = window.initialState;
                     let component = this;
+                    component.state = window.initialState;
 
-                    if (component.receivedState.functionKeys) {
-                        for (let k of component.receivedState.functionKeys) {
+                    if (component.state.functionKeys) {
+                        for (let k of component.state.functionKeys) {
                             mappedFunctions[k] = (a, b, c, d, e, f, g) => postMessage({type: "RNWC_PROPERTY_FUNCTION", func: k, params: [a, b, c, d, e, f, g]});
                         }
                     }
 
 
-                    document.addEventListener("message", function(e) {
-                        console.log("message received");
-                        console.log(e);
-                        var message = JSON.parse(e.data);
+                    document.addEventListener("message", function(event) {
+                        console.log("message received - new");
+                        console.log(event);
+                        var message = JSON.parse(event.data);
                         if (message.type == "ACK") {
                             messagePending = false;
                             processQueue();
                         }
                         else {
-                            component.receivedState.message = e.data;
-                            component.receivedState = Object.assign(component.receivedState, JSON.parse(e.data));
-
-                            if (component.receivedState.functionKeys) {
-                                for (let k of component.receivedState.functionKeys) {
+                            if (message.functionKeys) {
+                                for (let k of message.functionKeys) {
                                     mappedFunctions[k] = (a, b, c, d, e, f, g) => postMessage({type: "RNWC_PROPERTY_FUNCTION", func: k, params: [a, b, c, d, e, f, g]});
                                 }
                             }
 
                             component.setState({
-                                message3: JSON.stringify(e.data)
+                                receivedStateString: event.data,
+                                ...message
                             });
                         }
                     });
@@ -103,12 +101,9 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
                     }
                 }
                 render() {
-                    var initialProps = window.initialState;
                     return createElement(InnerComponent, {
-                        ...this.receivedState,
-                        ...mappedFunctions,
-                        message3: this.props.message3,
-                        ref: 'wrappedInstance'
+                        ...this.state,
+                        ...mappedFunctions
                     });
                 }
             }
@@ -118,7 +113,7 @@ export function connect(mapStateToProps, mapDispatchToProps, c) {
     } else {
         console.log("detected standard web component");
         // web component in normal use - call react redux
-        return rrc(mapStateToProps, mapDispatchToProps, c);
+        return rrc(mapStateToProps, mapDispatchToProps, mergeProps, options);
     }
 }
 

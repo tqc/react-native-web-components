@@ -39,12 +39,11 @@ export function getNavReducer(Routes, history) {
 
             result[key] = (p) => {
                 var m = currentPath.match(/:\w+/g) || [];
-                var route = currentPath;
+                var resolvedPath = currentPath;
                 for (let i = 0; i < m.length; i++) {
-                    route = route.replace(m[i], p[m[i].substr(1)]);
+                    resolvedPath = resolvedPath.replace(m[i], p[m[i].substr(1)]);
                 }
-                console.log(currentPath);
-                return route;
+                return resolvedPath;
             };
 
 
@@ -60,7 +59,7 @@ export function getNavReducer(Routes, history) {
         console.log("Navigating...");
         console.log(action);
         if (routemap[action.pageId]) {
-            var to = routemap[action.pageId](action);
+            var to = routemap[action.pageId]({...state.routeData, ...action});
             console.log(to);
             history.push(to);
             return {...state, routeData: {...state.routeData, ...action}};
