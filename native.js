@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, PureComponent } from 'react';
 import PropTypes from "prop-types";
 
 import { View, WebView } from 'react-native';
@@ -6,7 +6,7 @@ import { View, WebView } from 'react-native';
 import { connect } from "react-redux";
 
 var WW;
-
+let renderCount = 0;
 export class MappedComponent extends Component {
     static contextTypes = {
         store: PropTypes.any
@@ -46,6 +46,7 @@ export class MappedComponent extends Component {
                 this.props[action.func].apply(null, action.params);
             }
             else if (action.type == "RNWC_CONTENT_SIZE") {
+                console.log("Got height " + action.height);
                 this.setState({
                     contentHeight: action.height
                 });
@@ -72,6 +73,8 @@ export class MappedComponent extends Component {
                 continue;
             }
             if (this.sentState[k] == nextProps[k]) continue;
+            let jns = JSON.stringify(nextProps[k]);
+            if (JSON.stringify(this.sentState[k]) == jns) continue;
             payload[k] = this.sentState[k] = nextProps[k];
 
             // if a property changes to undefined, replace it with null since
@@ -89,9 +92,13 @@ export class MappedComponent extends Component {
         let payload = this.getPayload(this.props, nextProps);
         if (Object.keys(payload).length > 0) {
             console.log("Update of webview " + nextProps.componentKey);
+            //console.log(payload);
             this.webview.postMessage(JSON.stringify(payload));
         }
-        if (nextState.contentHeight != this.state.contentHeight) return true;
+        if (nextState.contentHeight != this.state.contentHeight) {
+            console.log("contentHeight changed from " + this.state.contentHeight + " to " + nextState.contentHeight);
+            return true;
+        }
         return false;
     }
     getWebViewSettings() {
@@ -147,6 +154,7 @@ export class MappedComponent extends Component {
         return null;
     }
     render() {
+        console.log("rendering webview");
         let webViewSettings = this.getWebViewSettings();
 
         let componentKey = this.props.componentKey || this.props.name;
@@ -162,7 +170,7 @@ export class MappedComponent extends Component {
         var style = {};
         style.backgroundColor = this.props.backgroundColor || "transparent";
         if (this.props.resizeToContent == true) {
-            style.height = this.state.contentHeight;
+            style.height = Math.max(this.state.contentHeight, this.props.minHeight || 0);
         }
         else {
             style.flex = 1;
@@ -175,6 +183,8 @@ export class MappedComponent extends Component {
             source = { webViewSettings.source }
             onMessage = {webViewSettings.onMessage}
             style = {style}
+            scrollEnabled={!this.props.resizeToContent}
+            scalesPageToFit={false}
             />
             </View>
         );
@@ -182,7 +192,7 @@ export class MappedComponent extends Component {
 }
 
 
-class WebWrapper extends Component {
+class WebWrapper extends PureComponent {
     static contextTypes = {
         store: PropTypes.any
     };
@@ -197,7 +207,7 @@ class WebWrapper extends Component {
     }
     render() {
         console.log("Rendering WebWrapper");
-
+        console.log(this.props.component.name);
         let customProps = {...this.props};
         delete customProps.component;
 

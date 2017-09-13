@@ -87,14 +87,14 @@ export function connect(mapStateToProps, mapDispatchToProps, mergeProps, options
 
                 }
                 componentDidMount() {
-                    let height = document.body.scrollHeight;
+                    let height = this.innerComponent.clientHeight;
                     if (height != this.reportedHeight) {
                         this.reportedHeight = height;
                         postMessage({type: "RNWC_CONTENT_SIZE", height: height});
                     }
                 }
                 componentDidUpdate() {
-                    let height = document.body.scrollHeight;
+                    let height = this.innerComponent.clientHeight;
                     if (height != this.reportedHeight) {
                         this.reportedHeight = height;
                         postMessage({type: "RNWC_CONTENT_SIZE", height: height});
@@ -103,7 +103,8 @@ export function connect(mapStateToProps, mapDispatchToProps, mergeProps, options
                 render() {
                     return createElement(InnerComponent, {
                         ...this.state,
-                        ...mappedFunctions
+                        ...mappedFunctions,
+                        ref: (c) => { this.innerComponent = c; }
                     });
                 }
             }

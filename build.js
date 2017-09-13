@@ -4,11 +4,15 @@ var path = require("path");
 
 exports.generateCombinedComponentScripts = function generateCombinedComponentScripts(webComponents) {
     fs.ensureDirSync("./rnwc");
+
+    let defaultScriptPath = "./node_modules/react-native/scripts/react-native-xcode.sh";
+    if (!fs.existsSync(defaultScriptPath)) defaultScriptPath = "./node_modules/react-native/packager/react-native-xcode.sh";
+
     let combinedScript = `import {createElement} from "react";\n`
             + `import {embedComponent} from "react-native-web-components";\n`
             + `import {render} from "react-dom";\n`
             + `var webComponents = {};\n`;
-    var bundlerScript = fs.readFileSync("./node_modules/react-native/packager/react-native-xcode.sh", "utf-8")
+    var bundlerScript = fs.readFileSync(defaultScriptPath, "utf-8")
         .replace(/REACT_NATIVE_DIR=.*\n/, "REACT_NATIVE_DIR=" + path.resolve(process.cwd(), "node_modules/react-native") + "\n")
         + "mkdir -p $DEST/rnwc";
     bundlerScript += "\n\n# Code below is automatically added by react-native-web-components\n";
@@ -40,7 +44,10 @@ exports.generateCombinedComponentScripts = function generateCombinedComponentScr
 exports.generateComponentScripts = function generateComponentScripts(webComponents) {
     fs.ensureDirSync("./rnwc");
 
-    var bundlerScript = fs.readFileSync("./node_modules/react-native/packager/react-native-xcode.sh", "utf-8")
+    let defaultScriptPath = "./node_modules/react-native/scripts/react-native-xcode.sh";
+    if (!fs.existsSync(defaultScriptPath)) defaultScriptPath = "./node_modules/react-native/packager/react-native-xcode.sh";
+
+    var bundlerScript = fs.readFileSync(defaultScriptPath, "utf-8")
         .replace(/REACT_NATIVE_DIR=.*\n/, "REACT_NATIVE_DIR=" + path.resolve(process.cwd(), "node_modules/react-native") + "\n")
         + "mkdir -p $DEST/rnwc";
     bundlerScript += "\n\n# Code below is automatically added by react-native-web-components\n";
