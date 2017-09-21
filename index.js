@@ -1,4 +1,5 @@
-import {Component, createElement} from "react";
+import React, {Component, PureComponent, createElement} from "react";
+import PropTypes from "prop-types";
 
 import { connect as rrc } from 'react-redux';
 
@@ -17,20 +18,46 @@ function postMessage(message) {
     processQueue();
 }
 
+export class WebWrapper extends PureComponent {
+    static contextTypes = {
+        store: PropTypes.any
+    };
+    static propTypes = {
+        store: PropTypes.any,
+        component: PropTypes.any
+    }
+    constructor(props, context) {
+        super(props, context);
+        this.store = props.store || context.store;
+    }
+    render() {
+        // implement this elsewhere so the web build doesn't try to
+        // import react native code
+        return null;
+    }
+}
+
+
 export function connect(mapStateToProps, mapDispatchToProps, mergeProps, options) {
     console.log("Connect....");
     let isNativeApp = (typeof navigator !== 'undefined' && navigator.product === 'ReactNative');
     if (isNativeApp) {
         console.log("detected native component");
+
         // native host - render a web view and connect it with redux
         // just return settings
         // call with <WebWrapper component={TestComponent} />
         // or WrapWebComponent(TestComponent)
         return function(component) {
-            return {
+            let cfg = {
                 url: "componenttest.js",
                 mapStateToProps: mapStateToProps,
                 mapDispatchToProps: mapDispatchToProps
+            };
+            return function WrappedWebWrapper(props) {
+                let actualComponent = component.WrappedComponent || component;
+                let componentKey = props.componentKey || actualComponent.componentKey || actualComponent.displayName || actualComponent.name;
+                return <WebWrapper {...props} componentKey={componentKey} component={cfg} />;
             };
         };
     } else if (global.isWrappedComponent) {
@@ -121,7 +148,7 @@ export function connect(mapStateToProps, mapDispatchToProps, mergeProps, options
 
 export function embedComponent(originalComponent) {
     if (!originalComponent) {
-        return () => "Component " + window.componentKey + " not found";
+        return () => "Component " + window.componentKey + " not found. You may need to run generateCombinedComponentScripts.";
     }
 
     if (originalComponent.isConnectedComponent) {

@@ -17,29 +17,35 @@ In the web component, the code is similar to using react-redux
 In the native app
 
     import TestComponent from "./testcomponent";
-    import {WebWrapper, Wrap} from "react-native-web-components/native";
 
       <View style={styles.container}>
-        <WebWrapper component={TestComponent} />
+        <TestComponent />
       </View>
 
 Or with the router:
 
-    function Wrap(WrappedComponent, key) {
+    function Wrap(WrappedComponent, options) {
         return function(props) {
-            return (<WebWrapper componentKey={key} {...props} style={styles.htmlpage} backgroundColor='#999' component={WrappedComponent} />);
+            return (<WrappedComponent {...options} {...props} style={styles.htmlpage} backgroundColor='#999' />);
         };
     }
     
-    <Scene key="testpage" title="Test Web Component" component={Wrap(TestComponent, "testpage")} />
+    <Scene key="testpage1" title="Test Web Component 1" component={TestComponent} />
+    <Scene key="testpage2" title="Test Web Component 2" component={Wrap(TestComponent, {componentKey: "customkey"})} />
 
 The componentKey property is optional, to be used when the scene key does not match the key used in the build process as the filename of the component script.
 
 To correctly load the scripts for the web components, WebWrapper needs to know the url of the main js bundle, which is only available from native code. In index.ios.js: 
 
+
+    import {WebWrapper, configureWebComponents} from "react-native-web-components/native";
+
     class TestApp extends Component {
         render() {
-            WebWrapper.mainBundleUrl = this.props.mainBundleUrl;
+            configureWebComponents({
+                mainBundleUrl: this.props.mainBundleUrl,
+                useCombinedScript: true
+            });
             return (
             <Provider store={store}>
               <Root2 />

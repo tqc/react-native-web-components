@@ -1,12 +1,19 @@
-import React, { Component, PureComponent } from 'react';
+import React, { Component } from 'react';
 import PropTypes from "prop-types";
 
 import { View, WebView } from 'react-native';
 
 import { connect } from "react-redux";
 
-var WW;
-let renderCount = 0;
+import {WebWrapper} from "./index";
+
+let config = {
+    useCombinedScript: true,
+    mainBundleUrl: "http://localhost:8081/index.ios.bundle?platform=ios&dev=true&minify=false"
+    // baseUrl,
+    // cssUrl
+};
+
 export class MappedComponent extends Component {
     static contextTypes = {
         store: PropTypes.any
@@ -113,15 +120,17 @@ export class MappedComponent extends Component {
 
         let componentKey = this.props.componentKey || this.props.name;
 
-        var mainBundleUrl = WW.mainBundleUrl || "http://localhost:8081/index.ios.bundle?platform=ios&dev=true&minify=false";
+        var mainBundleUrl = config.mainBundleUrl;
 
         let m = (/(.*\/)([^/]*)(\.(js)?bundle.*)/g).exec(mainBundleUrl);
 
-        var baseUrl = WW.baseUrl || m[1];
-        var cssUrl = WW.cssUrl || baseUrl + "build/index.css";
+        var baseUrl = config.baseUrl || m[1];
+        var cssUrl = config.cssUrl || (baseUrl + "build/index.css");
 
-        var entryPointName = this.props.useCombinedScript ? "allcomponents" : componentKey;
-        var bundleUrl = m[1] + "rnwc/" + entryPointName + m[3];
+        let useCombinedScript = this.props.useCombinedScript === undefined ? config.useCombinedScript : this.props.useCombinedScript;
+
+        var entryPointName = useCombinedScript ? "allcomponents" : componentKey;
+        var bundleUrl = baseUrl + "rnwc/" + entryPointName + m[3];
 
         var source = {
             baseUrl,
@@ -192,35 +201,24 @@ export class MappedComponent extends Component {
 }
 
 
-class WebWrapper extends PureComponent {
-    static contextTypes = {
-        store: PropTypes.any
-    };
-    static propTypes = {
-        store: PropTypes.any,
-        component: PropTypes.any
-    }
-    constructor(props, context) {
-        super(props, context);
-        this.store = props.store || context.store;
-            // call store.getState so we can call mapStateToProps on it
-    }
-    render() {
-        console.log("Rendering WebWrapper");
-        console.log(this.props.component.name);
-        let customProps = {...this.props};
-        delete customProps.component;
+WebWrapper.prototype.render = function renderWebWrapper() {
+    console.log("Rendering WebWrapper");
+    console.log(this.props.component.name);
+    let customProps = {...this.props};
+    delete customProps.component;
 
-        let shouldConnect = this.props.component.mapStateToProps || this.props.component.mapDispatchToProps;
-        if (shouldConnect) {
-            var ConnectedComponent = this.ConnectedComponent = this.ConnectedComponent || connect(this.props.component.mapStateToProps, this.props.component.mapDispatchToProps)(MappedComponent);
-            return (<ConnectedComponent {...customProps}/>);
-        } else {
-            return (<MappedComponent {...customProps}/>);
-        }
-
+    let shouldConnect = this.props.component.mapStateToProps || this.props.component.mapDispatchToProps;
+    if (shouldConnect) {
+        var ConnectedComponent = this.ConnectedComponent = this.ConnectedComponent || connect(this.props.component.mapStateToProps, this.props.component.mapDispatchToProps)(MappedComponent);
+        return (<ConnectedComponent {...customProps}/>);
+    } else {
+        return (<MappedComponent {...customProps}/>);
     }
+
+};
+
+export function configureWebComponents(cfg) {
+    Object.assign(config, cfg || {});
 }
-WW = WebWrapper;
 
 export { WebWrapper };

@@ -53,6 +53,7 @@ export function getNavReducer(Routes, history) {
 
     routemap = autoMap("", Routes, routemap);
 
+    console.log(routemap);
 
     return function navigationReducer(store, state, action) {
         if (action.type != "GO") return state;

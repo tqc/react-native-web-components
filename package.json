@@ -1,6 +1,6 @@
 {
   "name": "react-native-web-components",
-  "version": "1.0.9",
+  "version": "2.0.10",
   "description": "Use html react components in react-native apps",
   "author": "Tom Clarkson <tom@orangeguava.com> (http://tqclarkson.com)",
   "repository": {
@@ -13,6 +13,7 @@
   "scripts": {
     "test": "eslint . && mocha --compilers js:babel-core/register"
   },
+  "esnext": "index.js",
   "main": "index.js",
   "dependencies": {
     "fs-extra": "^1.0.0",
